@@ -1,22 +1,36 @@
 body {
-  background-color: black;
+  background-color: rgb(10, 10, 10);
   color: white;
   font-family: Arial, sans-serif;
 }
 
 .btn {
-  background: purple;
+  background-image: linear-gradient(to right, rgb(187, 37, 207), rgb(179, 34, 162));
   color: white;
-  padding: 10px 20px;
-  margin: 5px;
+  width: 20vw;
+  padding: 20px 20px;
+  margin: 10px;
   text-decoration: none;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: 0.3s;
+  font-size: x-large;
 }
 
 .btn:hover {
   background: #a020f0;
   box-shadow: 0 0 10px purple;
 }
+
+#btn1{
+  padding-bottom: 10vh;
+}
+
+
+@font-face {
+        font-family: 'YourCustomFontName'; /* Choose a unique name for your font */
+        src: url('./assets/LibertinusSans-Regular.ttf') format('ttf'),
+
+       
+    }
