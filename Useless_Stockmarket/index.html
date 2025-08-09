@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Useless Stock Exchange</title>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial/dist/chartjs-chart-financial.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #12181b;
+            --surface-color: #1a2226;
+            --primary-color: #33d489;
+            --green: #26a69a;
+            --red: #ef5350;
+            --text-main: #e0e0e0;
+            --text-light: #a9a9a9;
+            --border-color: #333c40;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        #root {
+            width: 100%;
+            max-width: 1100px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* General Styles */
+        .app-header { background-color: var(--surface-color); padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+        .header-title { font-size: 2rem; font-weight: 700; color: var(--primary-color); }
+        .main-nav button { font-size: 1rem; background: none; border: none; color: var(--text-light); padding: 0.5rem 1rem; cursor: pointer; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+        .main-nav button.active { background-color: var(--primary-color); color: #121212; }
+        .main-nav button:not(.active):hover { background-color: var(--border-color); color: var(--text-main); }
+        .portfolio-overview { display: flex; justify-content: space-around; text-align: center; background-color: #101416; padding: 1rem; border-radius: 8px; }
+        .overview-item h3 { color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .overview-item p { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .page-content { padding: 0.25rem; }
+        .dashboard-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1.5fr); gap: 1.5rem; }
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        .chart-section { background: var(--surface-color); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); }
+        .chart-section h2 { margin-top: 0; margin-bottom: 1.5rem; }
+        .controls-section { display: flex; flex-direction: column; gap: 1rem; }
+        .stock-control-card { background-color: var(--surface-color); padding: 1.25rem; border-radius: 12px; border-left: 5px solid var(--text-light); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .stock-control-card:hover { transform: translateY(-4px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .stock-control-card.active { border-left-color: var(--primary-color); background-color: #212d32; }
+        .stock-card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+        .stock-card-header h4 { margin: 0; font-size: 1.25rem; }
+        .stock-price { font-size: 1.2rem; font-weight: 700; }
+        .price-up { color: var(--green); }
+        .price-down { color: var(--red); }
+        .trade-form { display: flex; gap: 0.75rem; margin-top: 1rem; align-items: center; }
+        .trade-form input { flex-grow: 1; width: 60px; padding: 0.75rem; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); font-size: 1rem; }
+        .btn { padding: 0.75rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-buy { background-color: var(--green); color: #fff; }
+        .btn-sell { background-color: var(--red); color: #fff; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.4; }
+        .page-container { background-color: var(--surface-color); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 12px; }
+        .page-container h2 { margin-bottom: 1.5rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; display: inline-block; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { text-align: left; padding: 0.8rem; border-bottom: 1px solid var(--border-color); }
+        .data-table th { background-color: #212d32; font-weight: 500; }
+        .no-data-row { text-align: center; color: var(--text-light); padding: 2rem; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    // --- INITIAL DATA & UTILITIES ---
+    const INITIAL_STOCKS = [
+      { ticker: 'NVDA', name: 'Nvidia', price: 120.57 }, { ticker: 'MSFT', name: 'Microsoft', price: 447.67 },
+      { ticker: 'AAPL', name: 'Apple', price: 214.29 }, { ticker: 'GOOGL', name: 'Alphabet', price: 179.63 },
+      { ticker: 'AMZN', name: 'Amazon', price: 185.57 },
+    ];
+    const HISTORY_LENGTH = 50; // Keep 50 data points for the graph
+
+    const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    
+    const generateInitialHistory = (price) => {
+        let history = [];
+        let currentPrice = price;
+        for(let i=0; i<HISTORY_LENGTH; i++) {
+            const open = currentPrice;
+            const close = open + (Math.random() - 0.5) * (open * 0.01);
+            const high = Math.max(open, close) + (Math.random() * open * 0.005);
+            const low = Math.min(open, close) - (Math.random() * open * 0.005);
+            history.push({ o: open, h: high, l: low, c: close, x: Date.now() - (HISTORY_LENGTH - i) * 3000 });
+            currentPrice = close;
+        }
+        return history;
+    };
+
+    // --- CHART COMPONENT ---
+    const CandlestickChart = ({ data }) => {
+        const canvasRef = useRef(null);
+        const chartRef = useRef(null);
+
+        useEffect(() => {
+            if (!canvasRef.current) return;
+            const ctx = canvasRef.current.getContext('2d');
+            
+            if (chartRef.current) chartRef.current.destroy();
+
+            chartRef.current = new Chart(ctx, {
+                type: 'candlestick',
+                data: { datasets: [{ data: data }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { 
+                            type: 'time', 
+                            time: { unit: 'second', displayFormats: { second: 'h:mm:ss a' }},
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: 'rgba(255,255,255,0.7)' }
+                        },
+                        y: {
+                           grid: { color: 'rgba(255,255,255,0.1)' },
+                           ticks: { color: 'rgba(255,255,255,0.7)', callback: (val) => formatCurrency(val) }
+                        }
+                    },
+                    datasets: {
+                        candlestick: {
+                             color: { up: 'var(--green)', down: 'var(--red)', unchanged: 'grey'},
+                             borderColor: { up: 'var(--green)', down: 'var(--red)'}
+                        }
+                    }
+                }
+            });
+
+            return () => { if(chartRef.current) chartRef.current.destroy() };
+        }, []); 
+
+        useEffect(() => {
+            if (chartRef.current && data) {
+                chartRef.current.data.datasets[0].data = data;
+                chartRef.current.update();
+            }
+        }, [data]);
+
+        return <div style={{ position: 'relative', height: '350px' }}><canvas ref={canvasRef}></canvas></div>;
+    }
+    
+    // --- APP COMPONENTS ---
+    const Header = ({ portfolioValue, cash, page, setPage }) => ( <header className="app-header"> <div className="header-top"> <h1 className="header-title">Useless Stock Market</h1> <nav className="main-nav"> <button onClick={() => setPage('dashboard')} className={page === 'dashboard' ? 'active' : ''}>Dashboard</button> <button onClick={() => setPage('portfolio')} className={page === 'portfolio' ? 'active' : ''}>Portfolio & Log</button> </nav> </div> <div className="portfolio-overview"> <div className="overview-item"> <h3>Portfolio Value</h3><p>{formatCurrency(portfolioValue)}</p> </div> <div className="overview-item"> <h3>Cash</h3><p>{formatCurrency(cash)}</p> </div> </div> </header> );
+    const PortfolioPage = ({ stocks, portfolio, transactions }) => { const getStockByTicker = (ticker) => stocks.find(s => s.ticker === ticker); return ( <div className="page-container"> <h2>Your Holdings</h2> <table className="data-table"> <thead><tr><th>Company</th><th>Shares</th><th>Current Price</th><th>Total Value</th></tr></thead> <tbody> {Object.keys(portfolio.holdings).length > 0 ? ( Object.entries(portfolio.holdings).map(([ticker, amount]) => { const stock = getStockByTicker(ticker); return amount > 0 && <tr key={ticker}> <td>{stock.name} ({ticker})</td><td>{amount}</td><td>{formatCurrency(stock.price)}</td><td>{formatCurrency(amount * stock.price)}</td> </tr> }) ) : (<tr><td colSpan="4" className="no-data-row">You do not own any shares.</td></tr>) } </tbody> </table> <h2 style={{ marginTop: '2.5rem' }}>Transaction Log</h2> <table className="data-table"> <thead><tr><th>Date</th><th>Type</th><th>Stock</th><th>Amount</th><th>Price</th></tr></thead> <tbody> {transactions.length > 0 ? ( transactions.map(t => ( <tr key={t.id}> <td>{t.date}</td><td style={{color: t.type === 'BUY' ? 'var(--green)' : 'var(--red)', fontWeight: 'bold'}}>{t.type}</td><td>{t.ticker}</td><td>{t.amount}</td><td>{formatCurrency(t.price)}</td> </tr> )) ) : (<tr><td colSpan="5" className="no-data-row">No transactions have been made.</td></tr>) } </tbody> </table> </div> ); };
+
+    const DashboardPage = ({ stocks, portfolio, activeTicker, setActiveTicker, handleTrade }) => {
+        const activeStock = stocks.find(s => s.ticker === activeTicker);
+        const [tradeAmount, setTradeAmount] = useState({[activeTicker]: 1});
+        const onAmountChange = (e) => setTradeAmount(prev => ({ ...prev, [activeTicker]: Math.max(1, parseInt(e.target.value, 10) || 1) }));
+        const currentAmount = tradeAmount[activeTicker] || 1;
+        const canAffordBuy = portfolio.cash >= activeStock.price * currentAmount;
+        const canSell = (portfolio.holdings[activeTicker] || 0) >= currentAmount;
+        
+        return (
+            <div className="dashboard-grid">
+                <section className="chart-section">
+                    <h2>{activeStock.name} ({activeStock.ticker})</h2>
+                    <CandlestickChart data={activeStock.ohlcHistory} />
+                    <div className="trade-form" style={{marginTop: '1.5rem'}}>
+                        <input type="number" value={currentAmount} onChange={onAmountChange} min="1" />
+                        <button className="btn btn-buy" disabled={!canAffordBuy} onClick={() => handleTrade(activeTicker, 'BUY', currentAmount, activeStock.price)}>Buy</button>
+                        <button className="btn btn-sell" disabled={!canSell} onClick={() => handleTrade(activeTicker, 'SELL', currentAmount, activeStock.price)}>Sell</button>
+                    </div>
+                </section>
+                <section className="controls-section">
+                    {stocks.map(stock => (
+                        <div key={stock.ticker} className={`stock-control-card ${stock.ticker === activeTicker ? 'active' : ''}`} onClick={() => setActiveTicker(stock.ticker)}>
+                            <div className="stock-card-header">
+                                <h4>{stock.name}</h4>
+                                <p className={`stock-price ${stock.price > stock.ohlcHistory[stock.ohlcHistory.length - 2]?.c ? 'price-up' : 'price-down'}`}>{formatCurrency(stock.price)}</p>
+                            </div>
+                            <p style={{ color: '#a9a9a9' }}>Owned: {portfolio.holdings[stock.ticker] || 0}</p>
+                        </div>
+                    ))}
+                </section>
+            </div>
+        );
+    }
+
+    const App = () => {
+        const [page, setPage] = useState('dashboard');
+        const [stocks, setStocks] = useState(() => INITIAL_STOCKS.map(s => ({ ...s, ohlcHistory: generateInitialHistory(s.price), isCrashing: false, isSoaring: false })));
+        const [portfolio, setPortfolio] = useState({ cash: 25000, holdings: {} });
+        const [transactions, setTransactions] = useState([]);
+        const [activeTicker, setActiveTicker] = useState(INITIAL_STOCKS[0].ticker);
+        
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setStocks(currentStocks => currentStocks.map(stock => {
+                    const lastCandle = stock.ohlcHistory[stock.ohlcHistory.length - 1];
+                    const openPrice = lastCandle.c;
+                    let newCandle;
+                    let closePrice;
+
+                    if (stock.isCrashing) {
+                        // Downtrend logic for crashing stocks: price decreases by 10% each interval
+                        const decreaseFactor = 0.90; 
+                        closePrice = Math.max(0, openPrice * decreaseFactor);
+                        newCandle = { o: openPrice, h: openPrice, l: closePrice, c: closePrice, x: Date.now() };
+                    
+                    } else if (stock.isSoaring) {
+                        // Uptrend logic for soaring stocks: price increases by 10% each interval
+                        const increaseFactor = 1.10;
+                        closePrice = openPrice * increaseFactor;
+                        newCandle = { o: openPrice, h: closePrice, l: openPrice, c: closePrice, x: Date.now() };
+
+                    } else {
+                        // Original random fluctuation logic
+                        const volatility = 0.03;
+                        const change = (Math.random() - 0.5) * (openPrice * volatility);
+                        closePrice = Math.max(openPrice + change, 1);
+                        const high = Math.max(openPrice, closePrice) + (Math.random() * openPrice * 0.01);
+                        const low = Math.min(openPrice, closePrice) - (Math.random() * openPrice * 0.01);
+                        newCandle = { o: openPrice, h: high, l: low, c: closePrice, x: Date.now() };
+                    }
+                    
+                    return { ...stock, price: closePrice, ohlcHistory: [...stock.ohlcHistory.slice(1), newCandle] };
+                }));
+            }, 3000); // Update every 3 seconds
+            return () => clearInterval(interval);
+        }, []);
+        
+        const portfolioValue = useMemo(() => {
+            const holdingsValue = Object.entries(portfolio.holdings).reduce((total, [ticker, amount]) => {
+                const stock = stocks.find(s => s.ticker === ticker);
+                return total + (amount * (stock?.price || 0));
+            }, 0);
+            return portfolio.cash + holdingsValue;
+        }, [portfolio, stocks]);
+        
+        const handleTrade = useCallback((ticker, type, amount, price) => {
+             amount = parseInt(amount, 10);
+             if (!amount || amount <= 0) return alert("Please enter a valid amount.");
+             const cost = amount * price;
+
+             // Set trend based on trade type
+             if (type === 'BUY' && portfolio.cash >= cost) {
+                setStocks(prevStocks => prevStocks.map(s => s.ticker === ticker ? { ...s, isCrashing: true, isSoaring: false } : s));
+             } else if (type === 'SELL' && (portfolio.holdings[ticker] || 0) >= amount) {
+                setStocks(prevStocks => prevStocks.map(s => s.ticker === ticker ? { ...s, isSoaring: true, isCrashing: false } : s));
+             }
+
+             setPortfolio(prev => {
+                if (type === 'BUY') {
+                    if (prev.cash < cost) { alert("Not enough cash!"); return prev; }
+                    return { cash: prev.cash - cost, holdings: {...prev.holdings, [ticker]: (prev.holdings[ticker] || 0) + amount } };
+                } else { // SELL
+                    if (!prev.holdings[ticker] || prev.holdings[ticker] < amount) { alert("Not enough shares!"); return prev; }
+                    return { cash: prev.cash + cost, holdings: {...prev.holdings, [ticker]: prev.holdings[ticker] - amount } };
+                }
+             });
+             setTransactions(prev => [{ id: Date.now(), ticker, type, amount, price, date: new Date().toLocaleTimeString() }, ...prev]);
+        }, [portfolio.cash, portfolio.holdings]);
+
+        return (
+            <div>
+                <Header portfolioValue={portfolioValue} cash={portfolio.cash} page={page} setPage={setPage} />
+                <main className="page-content">
+                    {page === 'dashboard' && <DashboardPage stocks={stocks} portfolio={portfolio} activeTicker={activeTicker} setActiveTicker={setActiveTicker} handleTrade={handleTrade} />}
+                    {page === 'portfolio' && <PortfolioPage stocks={stocks} portfolio={portfolio} transactions={transactions} />}
+                </main>
+            </div>
+        );
+    }
+    
+    ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
