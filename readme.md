@@ -6,7 +6,7 @@ Team Lead: ABDUL RAHIM - CUCEK
 Member 2: AHMED AMBADI - CUCEK
 
 Project Description
-A Stock market simulator that reverse market logic and lets you always end up in no matter what (spoiler: there is a loophole involved) This simulation uses a Geometric Brownian Motion equation to simulate a stock market. Core tech stack involves html css JavaScript
+A Stock market simulator that reverse market logic and lets you always end up in a loss, no matter what (spoiler: there is a loophole involved) This simulation uses a Geometric Brownian Motion equation to simulate a stock market. Core tech stack involves html css JavaScript
 
 The Problem (that doesn't exist)
 Problem of people understating market sentiment
